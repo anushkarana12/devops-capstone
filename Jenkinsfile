@@ -15,6 +15,7 @@ pipeline {
                     test -f app.py
                     test -f requirements.txt
                     test -f Dockerfile
+                    test -f Dockerfile.test
                     test -f docker-compose.yml
                     test -d templates
                     test -d tests
@@ -23,18 +24,11 @@ pipeline {
             }
         }
 
-        stage('Install Dependencies') {
-            steps {
-                sh '''
-                    python3 -m pip install -r requirements.txt
-                '''
-            }
-        }
-
         stage('Automated Unit Tests') {
             steps {
                 sh '''
-                    python3 -m unittest discover -s tests -v
+                    docker build -f Dockerfile.test -t devops-capstone-tests:latest .
+                    docker run --rm devops-capstone-tests:latest
                 '''
             }
         }
