@@ -1,4 +1,3 @@
-
 pipeline {
     agent any
 
@@ -18,7 +17,24 @@ pipeline {
                     test -f Dockerfile
                     test -f docker-compose.yml
                     test -d templates
+                    test -d tests
                     echo "All required project files are present"
+                '''
+            }
+        }
+
+        stage('Install Dependencies') {
+            steps {
+                sh '''
+                    python3 -m pip install -r requirements.txt
+                '''
+            }
+        }
+
+        stage('Automated Unit Tests') {
+            steps {
+                sh '''
+                    python3 -m unittest discover -s tests -v
                 '''
             }
         }
@@ -31,7 +47,7 @@ pipeline {
 
         stage('Deployment Preparation') {
             steps {
-                echo 'Docker image build completed. Ready for Kubernetes deployment.'
+                echo 'Tests passed and Docker image build completed.'
             }
         }
     }
