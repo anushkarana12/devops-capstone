@@ -1,0 +1,9 @@
+services:
+  web:
+    build: .
+    container_name: devops-task-app
+    ports:
+      - "5000:5000"
+    volumes:
+      - ./data/tasks.db:/app/tasks.db
+    restart: unless-stopped
