@@ -1,3 +1,4 @@
+
 pipeline {
     agent any
 
@@ -19,6 +20,9 @@ pipeline {
                     test -f docker-compose.yml
                     test -d templates
                     test -d tests
+                    test -f k8s/deployment.yaml
+                    test -f k8s/service.yaml
+                    test -f k8s/pvc.yaml
                     echo "All required project files are present"
                 '''
             }
@@ -39,16 +43,27 @@ pipeline {
             }
         }
 
-        stage('Deployment Preparation') {
+        stage('Deploy to Kubernetes') {
             steps {
-                echo 'Tests passed and Docker image build completed.'
+                sh '''
+                    kubectl --kubeconfig=/var/jenkins_home/.kube/config apply -f k8s/pvc.yaml
+                    kubectl --kubeconfig=/var/jenkins_home/.kube/config apply -f k8s/deployment.yaml
+                    kubectl --kubeconfig=/var/jenkins_home/.kube/config apply -f k8s/service.yaml
+
+                    kubectl --kubeconfig=/var/jenkins_home/.kube/config rollout restart deployment/task-app
+                    kubectl --kubeconfig=/var/jenkins_home/.kube/config rollout status deployment/task-app --timeout=180s
+
+                    kubectl --kubeconfig=/var/jenkins_home/.kube/config get deployments
+                    kubectl --kubeconfig=/var/jenkins_home/.kube/config get pods
+                    kubectl --kubeconfig=/var/jenkins_home/.kube/config get services
+                '''
             }
         }
     }
 
     post {
         success {
-            echo 'CI/CD pipeline completed successfully'
+            echo 'CI/CD pipeline completed successfully. Application deployed to Kubernetes.'
         }
         failure {
             echo 'CI/CD pipeline failed. Check the console output.'
