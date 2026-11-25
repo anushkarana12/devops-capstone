@@ -46,6 +46,7 @@ pipeline {
         stage('Deploy to Kubernetes') {
             steps {
                 sh '''
+                    docker save devops-capstone-web:latest | docker exec -i desktop-control-plane ctr -n k8s.io images import -
                     kubectl --kubeconfig=/var/jenkins_home/.kube/config apply -f k8s/pvc.yaml
                     kubectl --kubeconfig=/var/jenkins_home/.kube/config apply -f k8s/deployment.yaml
                     kubectl --kubeconfig=/var/jenkins_home/.kube/config apply -f k8s/service.yaml
