@@ -22,6 +22,11 @@ spec:
       containers:
         - name: task-app
           image: devops-capstone-web:latest
+          envFrom:
+            - configMapRef:
+                name: task-app-config
+            - secretRef:
+                name: task-app-secret
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 5000

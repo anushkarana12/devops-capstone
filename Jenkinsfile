@@ -23,6 +23,7 @@ pipeline {
                     test -f k8s/deployment.yaml
                     test -f k8s/service.yaml
                     test -f k8s/pvc.yaml
+                    test -f k8s/configmap.yaml
                     echo "All required project files are present"
                 '''
             }
@@ -48,6 +49,7 @@ pipeline {
                 sh '''
                     docker save devops-capstone-web:latest | docker exec -i desktop-control-plane ctr -n k8s.io images import -
                     kubectl --kubeconfig=/var/jenkins_home/.kube/config apply -f k8s/pvc.yaml
+                    kubectl --kubeconfig=/var/jenkins_home/.kube/config apply -f k8s/configmap.yaml
                     kubectl --kubeconfig=/var/jenkins_home/.kube/config apply -f k8s/deployment.yaml
                     kubectl --kubeconfig=/var/jenkins_home/.kube/config apply -f k8s/service.yaml
 

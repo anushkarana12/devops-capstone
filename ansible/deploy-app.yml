@@ -1,0 +1,59 @@
+---
+- name: Deploy Flask application to Kubernetes
+  hosts: localhost
+  connection: local
+  gather_facts: false
+
+  vars:
+    project_dir: "{{ playbook_dir }}/.."
+
+  tasks:
+    - name: Verify Kubernetes connection
+      command: kubectl get nodes
+      register: kubernetes_status
+      changed_when: false
+
+    - name: Apply persistent volume claim
+      command: kubectl apply -f k8s/pvc.yaml
+      args:
+        chdir: "{{ project_dir }}"
+      register: pvc_result
+      changed_when: "'created' in pvc_result.stdout or 'configured' in pvc_result.stdout"
+
+    - name: Apply ConfigMap
+      command: kubectl apply -f k8s/configmap.yaml
+      args:
+        chdir: "{{ project_dir }}"
+      register: configmap_result
+      changed_when: "'created' in configmap_result.stdout or 'configured' in configmap_result.stdout"
+
+    - name: Verify Kubernetes Secret exists
+      command: kubectl get secret task-app-secret
+      changed_when: false
+
+    - name: Apply application Deployment
+      command: kubectl apply -f k8s/deployment.yaml
+      args:
+        chdir: "{{ project_dir }}"
+      register: deployment_result
+      changed_when: "'created' in deployment_result.stdout or 'configured' in deployment_result.stdout"
+
+    - name: Apply application Service
+      command: kubectl apply -f k8s/service.yaml
+      args:
+        chdir: "{{ project_dir }}"
+      register: service_result
+      changed_when: "'created' in service_result.stdout or 'configured' in service_result.stdout"
+
+    - name: Wait for application rollout
+      command: kubectl rollout status deployment/task-app --timeout=120s
+      changed_when: false
+
+    - name: Display application deployment status
+      command: kubectl get deployments,pods,services -l app=task-app
+      register: app_status
+      changed_when: false
+
+    - name: Show deployment information
+      debug:
+        var: app_status.stdout_lines

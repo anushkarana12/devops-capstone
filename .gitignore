@@ -5,3 +5,10 @@ tasks.db
 .env
 data/
 /~/
+
+# Terraform
+.terraform/
+*.tfstate
+*.tfstate.*
+crash.log
+crash.*.log
