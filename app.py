@@ -1,8 +1,15 @@
 
-from flask import Flask, render_template, request, redirect, url_for, abort, render_template_string
+import os
 import sqlite3
+from functools import wraps
+from flask import Flask, render_template, request, redirect, url_for, abort, render_template_string, session
+from werkzeug.security import check_password_hash
 
 app = Flask(__name__)
+app.secret_key = os.environ.get("APP_SECRET", "local-development-only-change-me")
+
+ADMIN_USERNAME = os.environ.get("ADMIN_USERNAME", "admin")
+ADMIN_PASSWORD_HASH = os.environ.get("ADMIN_PASSWORD_HASH", "")
 
 
 def get_db():
@@ -11,7 +18,45 @@ def get_db():
     return conn
 
 
+def login_required(function):
+    @wraps(function)
+    def wrapper(*args, **kwargs):
+        if not session.get("logged_in"):
+            return redirect(url_for("login"))
+        return function(*args, **kwargs)
+    return wrapper
+
+
+@app.route("/login", methods=["GET", "POST"])
+def login():
+    error = None
+
+    if request.method == "POST":
+        username = request.form.get("username", "")
+        password = request.form.get("password", "")
+
+        if not ADMIN_PASSWORD_HASH:
+            error = "Login is not configured. Contact the administrator."
+        elif username == ADMIN_USERNAME and check_password_hash(
+            ADMIN_PASSWORD_HASH, password
+        ):
+            session.clear()
+            session["logged_in"] = True
+            return redirect(url_for("home"))
+        else:
+            error = "Invalid username or password."
+
+    return render_template("login.html", error=error)
+
+
+@app.route("/logout", methods=["POST"])
+def logout():
+    session.clear()
+    return redirect(url_for("login"))
+
+
 @app.route("/")
+@login_required
 def home():
     conn = get_db()
     try:
@@ -23,6 +68,7 @@ def home():
 
 
 @app.route("/add", methods=["POST"])
+@login_required
 def add():
     title = request.form.get("title", "").strip()
 
@@ -40,6 +86,7 @@ def add():
 
 
 @app.route("/update/<int:task_id>", methods=["POST"])
+@login_required
 def update(task_id):
     title = request.form.get("title", "").strip()
 
@@ -63,6 +110,7 @@ def update(task_id):
 
 
 @app.route("/delete/<int:task_id>")
+@login_required
 def delete(task_id):
     conn = get_db()
     try:
@@ -80,6 +128,7 @@ def delete(task_id):
 
 
 @app.route("/api/tasks")
+@login_required
 def api_tasks():
     conn = get_db()
     try:

@@ -124,6 +124,13 @@
 <body>
     <div class="container">
         <h1>Task Management System</h1>
+	<form action="{{ url_for('logout') }}" method="POST"
+	      style="text-align: right; margin-bottom: 20px;">
+    		<button type="submit"
+            		style="background: #dc2626; color: white;">
+        	Logout
+    		</button>
+	</form>
 
         <form action="/add" method="POST" class="add-form">
             <input type="text" name="title"

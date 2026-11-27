@@ -11,3 +11,4 @@ terraform/*.tfstate*
 security-reports/
 monitoring/
 ansible/
+backup-before-auth/
