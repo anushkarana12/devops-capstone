@@ -75,6 +75,24 @@ class TaskAppTestCase(unittest.TestCase):
         api_response = self.client.get("/api/tasks")
         self.assertEqual(len(api_response.json["tasks"]), 0)
 
+    def test_update_task(self):
+        self.client.post("/add", data={"title": "Old Task"})
+
+        api_response = self.client.get("/api/tasks")
+        task_id = api_response.json["tasks"][0]["id"]
+
+        response = self.client.post(
+            f"/update/{task_id}",
+            data={"title": "Updated Task"}
+        )
+
+        self.assertEqual(response.status_code, 302)
+
+        api_response = self.client.get("/api/tasks")
+        self.assertEqual(
+            api_response.json["tasks"][0]["title"],
+            "Updated Task"
+        )
 
 if __name__ == "__main__":
     unittest.main()

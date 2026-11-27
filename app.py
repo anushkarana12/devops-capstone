@@ -1,3 +1,4 @@
+
 from flask import Flask, render_template, request, redirect, url_for
 import sqlite3
 
@@ -22,6 +23,20 @@ def add():
     conn.execute("INSERT INTO tasks (title) VALUES (?)", (title,))
     conn.commit()
     conn.close()
+    return redirect(url_for("home"))
+
+@app.route("/update/<int:task_id>", methods=["POST"])
+def update(task_id):
+    title = request.form["title"]
+
+    conn = get_db()
+    conn.execute(
+        "UPDATE tasks SET title = ? WHERE id = ?",
+        (title, task_id)
+    )
+    conn.commit()
+    conn.close()
+
     return redirect(url_for("home"))
 
 @app.route("/delete/<int:task_id>")
