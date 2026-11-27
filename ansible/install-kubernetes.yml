@@ -1,0 +1,24 @@
+
+- name: Verify Kubernetes cluster
+  hosts: localhost
+  connection: local
+  gather_facts: no
+
+  tasks:
+    - name: Check kubectl version
+      command: kubectl version --client
+      register: kubectl_version
+      changed_when: false
+
+    - name: Display kubectl version
+      debug:
+        msg: "{{ kubectl_version.stdout }}"
+
+    - name: Check Kubernetes cluster nodes
+      command: kubectl get nodes
+      register: cluster_nodes
+      changed_when: false
+
+    - name: Display cluster nodes
+      debug:
+        msg: "{{ cluster_nodes.stdout }}"

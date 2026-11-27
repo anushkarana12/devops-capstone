@@ -1,0 +1,23 @@
+- name: Verify Docker installation
+  hosts: localhost
+  connection: local
+  gather_facts: no
+
+  tasks:
+    - name: Check Docker version
+      command: docker --version
+      register: docker_version
+      changed_when: false
+
+    - name: Display Docker version
+      debug:
+        msg: "{{ docker_version.stdout }}"
+
+    - name: Check Docker availability
+      command: docker info
+      register: docker_status
+      changed_when: false
+
+    - name: Display Docker status
+      debug:
+        msg: "Docker is running successfully"

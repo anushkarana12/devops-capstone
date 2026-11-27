@@ -1,58 +1,113 @@
 
-from flask import Flask, render_template, request, redirect, url_for
+from flask import Flask, render_template, request, redirect, url_for, abort, render_template_string
 import sqlite3
 
 app = Flask(__name__)
+
 
 def get_db():
     conn = sqlite3.connect("tasks.db")
     conn.row_factory = sqlite3.Row
     return conn
 
+
 @app.route("/")
 def home():
     conn = get_db()
-    tasks = conn.execute("SELECT * FROM tasks").fetchall()
-    conn.close()
+    try:
+        tasks = conn.execute("SELECT * FROM tasks").fetchall()
+    finally:
+        conn.close()
+
     return render_template("index.html", tasks=tasks)
+
 
 @app.route("/add", methods=["POST"])
 def add():
-    title = request.form["title"]
+    title = request.form.get("title", "").strip()
+
+    if not title:
+        abort(400, description="Task title cannot be empty.")
+
     conn = get_db()
-    conn.execute("INSERT INTO tasks (title) VALUES (?)", (title,))
-    conn.commit()
-    conn.close()
+    try:
+        conn.execute("INSERT INTO tasks (title) VALUES (?)", (title,))
+        conn.commit()
+    finally:
+        conn.close()
+
     return redirect(url_for("home"))
+
 
 @app.route("/update/<int:task_id>", methods=["POST"])
 def update(task_id):
-    title = request.form["title"]
+    title = request.form.get("title", "").strip()
+
+    if not title:
+        abort(400, description="Task title cannot be empty.")
 
     conn = get_db()
-    conn.execute(
-        "UPDATE tasks SET title = ? WHERE id = ?",
-        (title, task_id)
-    )
-    conn.commit()
-    conn.close()
+    try:
+        result = conn.execute(
+            "UPDATE tasks SET title = ? WHERE id = ?",
+            (title, task_id)
+        )
+        conn.commit()
+
+        if result.rowcount == 0:
+            abort(404)
+    finally:
+        conn.close()
 
     return redirect(url_for("home"))
+
 
 @app.route("/delete/<int:task_id>")
 def delete(task_id):
     conn = get_db()
-    conn.execute("DELETE FROM tasks WHERE id = ?", (task_id,))
-    conn.commit()
-    conn.close()
+    try:
+        result = conn.execute(
+            "DELETE FROM tasks WHERE id = ?", (task_id,)
+        )
+        conn.commit()
+
+        if result.rowcount == 0:
+            abort(404)
+    finally:
+        conn.close()
+
     return redirect(url_for("home"))
+
 
 @app.route("/api/tasks")
 def api_tasks():
     conn = get_db()
-    tasks = conn.execute("SELECT * FROM tasks").fetchall()
-    conn.close()
+    try:
+        tasks = conn.execute("SELECT * FROM tasks").fetchall()
+    finally:
+        conn.close()
+
     return {"tasks": [dict(task) for task in tasks]}
+
+
+@app.errorhandler(400)
+def bad_request(error):
+    return render_template_string(
+        "<h1>400 - Bad Request</h1><p>{{ message }}</p>",
+        message=error.description
+    ), 400
+
+
+@app.errorhandler(404)
+def not_found(error):
+    return "<h1>404 - Page or task not found</h1>", 404
+
+
+@app.errorhandler(500)
+def server_error(error):
+    app.logger.exception("An unexpected server error occurred")
+    return "<h1>500 - Internal Server Error</h1>", 500
+
 
 if __name__ == "__main__":
     conn = get_db()
@@ -64,4 +119,5 @@ if __name__ == "__main__":
     """)
     conn.commit()
     conn.close()
-    app.run(host="0.0.0.0", port=5000, debug=True)
+
+    app.run(host="0.0.0.0", port=5000, debug=False)

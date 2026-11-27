@@ -93,6 +93,23 @@ class TaskAppTestCase(unittest.TestCase):
             api_response.json["tasks"][0]["title"],
             "Updated Task"
         )
+    def test_empty_task(self):
+        response = self.client.post(
+            "/add",
+            data={"title": "   "}
+        )
+        self.assertEqual(response.status_code, 400)
+
+    def test_update_invalid_task(self):
+        response = self.client.post(
+            "/update/9999",
+            data={"title": "Updated Task"}
+        )
+        self.assertEqual(response.status_code, 404)
+
+    def test_delete_invalid_task(self):
+        response = self.client.get("/delete/9999")
+        self.assertEqual(response.status_code, 404)
 
 if __name__ == "__main__":
     unittest.main()
