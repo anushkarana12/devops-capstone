@@ -1,28 +1,157 @@
-
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Task Management System</title>
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            background: #f3f4f6;
+            margin: 0;
+            padding: 30px 15px;
+        }
+
+        .container {
+            max-width: 750px;
+            margin: auto;
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+        }
+
+        h1 {
+            text-align: center;
+            color: #2563eb;
+        }
+
+        h2 {
+            color: #333;
+            margin-top: 30px;
+        }
+
+        .add-form {
+            display: flex;
+            gap: 10px;
+        }
+
+        input {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            font-size: 15px;
+        }
+
+        button, .delete-button {
+            padding: 12px 18px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            text-decoration: none;
+            color: white;
+        }
+
+        .add-button {
+            background: #2563eb;
+        }
+
+        .update-button {
+            background: #16a34a;
+        }
+
+        .delete-button {
+            background: #dc2626;
+            display: inline-block;
+        }
+
+        .task {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 15px 0;
+            border-bottom: 1px solid #eee;
+        }
+
+        .task form {
+            display: flex;
+            flex: 1;
+            gap: 10px;
+            min-width: 0;
+        }
+
+        .empty-message {
+            color: #777;
+            text-align: center;
+            padding: 20px;
+        }
+
+        @media (max-width: 600px) {
+            .container {
+                padding: 20px 15px;
+            }
+
+            .add-form {
+                flex-direction: column;
+            }
+
+            .task {
+                flex-wrap: wrap;
+            }
+
+            .task form {
+                flex-basis: 100%;
+            }
+
+            .task form button {
+                padding: 12px;
+            }
+
+            .delete-button {
+                margin-left: auto;
+            }
+        }
+    </style>
 </head>
+
 <body>
-    <h1>Task Management System</h1>
+    <div class="container">
+        <h1>Task Management System</h1>
 
-    <form action="/add" method="POST">
-        <input type="text" name="title" placeholder="Enter a task" required>
-        <button type="submit">Add Task</button>
-    </form>
+        <form action="/add" method="POST" class="add-form">
+            <input type="text" name="title"
+                   placeholder="Enter a task" required>
+            <button type="submit" class="add-button">Add Task</button>
+        </form>
 
-    <h2>My Tasks</h2>
+        <h2>My Tasks</h2>
 
-    {% for task in tasks %}
-        <p>
-            <form action="/update/{{ task.id }}" method="POST">
-                <input type="text" name="title" value="{{ task.title }}" required>
-                <button type="submit">Update</button>
-            </form>
+        {% for task in tasks %}
+            <div class="task">
+                <form action="/update/{{ task.id }}" method="POST">
+                    <input type="text" name="title"
+                           value="{{ task.title }}" required>
+                    <button type="submit" class="update-button">
+                        Update
+                    </button>
+                </form>
 
-            <a href="/delete/{{ task.id }}">Delete</a>
-        </p>
-    {% endfor %}
+                <a href="/delete/{{ task.id }}"
+                   class="delete-button"
+                   onclick="return confirm('Delete this task?')">
+                    Delete
+                </a>
+            </div>
+        {% else %}
+            <p class="empty-message">No tasks available. Add your first task!</p>
+        {% endfor %}
+    </div>
 </body>
 </html>
