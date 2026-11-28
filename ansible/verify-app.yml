@@ -17,13 +17,16 @@
       command: kubectl get pvc task-db-pvc
       changed_when: false
 
-    - name: Check application API
+    - name: Verify API authentication protection
       uri:
         url: http://127.0.0.1:8081/api/tasks
         method: GET
-        status_code: 200
+        follow_redirects: none
+        status_code: 302
       register: api_result
 
-    - name: Display API verification
-      debug:
-        var: api_result.json
+    - name: Confirm API authentication protection
+      assert:
+        that:
+          - api_result.status == 302
+        success_msg: "API correctly redirects unauthenticated requests."

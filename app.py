@@ -1,11 +1,16 @@
 
 import os
+import logging
+import sys
 import sqlite3
 from functools import wraps
 from flask import Flask, render_template, request, redirect, url_for, abort, render_template_string, session
 from werkzeug.security import check_password_hash
 
+logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s %(message)s", stream=sys.stdout)
+
 app = Flask(__name__)
+app.logger.setLevel(logging.INFO)
 app.secret_key = os.environ.get("APP_SECRET", "local-development-only-change-me")
 
 ADMIN_USERNAME = os.environ.get("ADMIN_USERNAME", "admin")
