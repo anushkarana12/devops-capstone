@@ -1,3 +1,4 @@
+
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -19,21 +20,34 @@ spec:
           volumeMounts:
             - name: task-storage
               mountPath: /storage
+
       containers:
         - name: task-app
           image: devops-capstone-web:latest
+          imagePullPolicy: IfNotPresent
+
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+            seccompProfile:
+              type: RuntimeDefault
+
           envFrom:
             - configMapRef:
                 name: task-app-config
             - secretRef:
                 name: task-app-secret
-          imagePullPolicy: IfNotPresent
+
           ports:
             - containerPort: 5000
+
           volumeMounts:
             - name: task-storage
               mountPath: /app/tasks.db
               subPath: tasks.db
+
       volumes:
         - name: task-storage
           persistentVolumeClaim:
