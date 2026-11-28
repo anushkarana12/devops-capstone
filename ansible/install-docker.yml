@@ -1,23 +1,41 @@
-- name: Verify Docker installation
+---
+- name: Install or verify Docker
   hosts: localhost
   connection: local
-  gather_facts: no
+  become: false
+  gather_facts: true
 
   tasks:
-    - name: Check Docker version
+    - name: Check Docker CLI
+      command: docker --version
+      register: docker_check
+      changed_when: false
+      failed_when: false
+      become: false
+
+    - name: Install Docker on Ubuntu when missing
+      apt:
+        name: docker.io
+        state: present
+        update_cache: true
+      when:
+        - ansible_os_family == "Debian"
+        - docker_check.rc != 0
+
+    - name: Verify Docker CLI
       command: docker --version
       register: docker_version
       changed_when: false
+      become: false
 
-    - name: Display Docker version
-      debug:
-        msg: "{{ docker_version.stdout }}"
-
-    - name: Check Docker availability
+    - name: Verify Docker daemon connectivity
       command: docker info
       register: docker_status
       changed_when: false
+      become: false
 
-    - name: Display Docker status
+    - name: Display Docker installation status
       debug:
-        msg: "Docker is running successfully"
+        msg:
+          - "{{ docker_version.stdout }}"
+          - "Docker daemon is accessible."

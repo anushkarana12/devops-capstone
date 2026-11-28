@@ -1,24 +1,72 @@
 
-- name: Verify Kubernetes cluster
+---
+- name: Install kubectl and verify Kubernetes cluster
   hosts: localhost
   connection: local
-  gather_facts: no
+  become: false
+  gather_facts: true
 
   tasks:
-    - name: Check kubectl version
+    - name: Check whether kubectl is installed
+      command: kubectl version --client
+      register: kubectl_check
+      changed_when: false
+      failed_when: false
+      become: false
+
+    - name: Install curl
+      apt:
+        name: curl
+        state: present
+        update_cache: true
+      when: kubectl_check.rc != 0
+
+    - name: Download kubectl for AMD64 systems
+      get_url:
+        url: https://dl.k8s.io/release/stable.txt
+        dest: /tmp/kubectl-stable-version
+        mode: "0644"
+      when:
+        - kubectl_check.rc != 0
+        - ansible_architecture == "x86_64"
+
+    - name: Download kubectl for ARM64 systems
+      get_url:
+        url: https://dl.k8s.io/release/stable.txt
+        dest: /tmp/kubectl-stable-version
+        mode: "0644"
+      when:
+        - kubectl_check.rc != 0
+        - ansible_architecture == "aarch64"
+
+    - name: Read stable Kubernetes version
+      command: cat /tmp/kubectl-stable-version
+      register: kubectl_stable
+      changed_when: false
+      when: kubectl_check.rc != 0
+
+    - name: Download kubectl binary
+      get_url:
+        url: "https://dl.k8s.io/release/{{ kubectl_stable.stdout }}/bin/linux/{{ 'amd64' if ansible_architecture == 'x86_64' else 'arm64' }}/kubectl"
+        dest: /usr/local/bin/kubectl
+        mode: "0755"
+      when: kubectl_check.rc != 0
+
+    - name: Verify kubectl installation
       command: kubectl version --client
       register: kubectl_version
       changed_when: false
-
-    - name: Display kubectl version
-      debug:
-        msg: "{{ kubectl_version.stdout }}"
+      become: false
 
     - name: Check Kubernetes cluster nodes
       command: kubectl get nodes
       register: cluster_nodes
       changed_when: false
+      become: false
 
-    - name: Display cluster nodes
+    - name: Display Kubernetes installation and cluster status
       debug:
-        msg: "{{ cluster_nodes.stdout }}"
+        msg:
+          - "{{ kubectl_version.stdout }}"
+          - "{{ cluster_nodes.stdout }}"
+          - "Kubernetes cluster is accessible."
