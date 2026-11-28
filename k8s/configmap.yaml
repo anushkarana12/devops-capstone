@@ -1,6 +1,7 @@
 apiVersion: v1
-data:
-  APP_ENV: production
 kind: ConfigMap
 metadata:
   name: task-app-config
+data:
+  APP_ENV: production
+  GITOPS_TEST: enabled
