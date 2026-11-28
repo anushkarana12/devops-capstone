@@ -5,14 +5,18 @@ import sys
 import sqlite3
 from functools import wraps
 from flask import Flask, render_template, request, redirect, url_for, abort, render_template_string, session
+from flask_wtf.csrf import CSRFProtect
 from werkzeug.security import check_password_hash
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s %(message)s", stream=sys.stdout)
 
 app = Flask(__name__)
 app.logger.setLevel(logging.INFO)
-app.secret_key = os.environ.get("APP_SECRET", "local-development-only-change-me")
 
+app.config["SECRET_KEY"] = os.environ.get("APP_SECRET")
+app.config["WTF_CSRF_ENABLED"] = True
+
+csrf = CSRFProtect(app)
 ADMIN_USERNAME = os.environ.get("ADMIN_USERNAME", "admin")
 ADMIN_PASSWORD_HASH = os.environ.get("ADMIN_PASSWORD_HASH", "")
 
@@ -114,7 +118,7 @@ def update(task_id):
     return redirect(url_for("home"))
 
 
-@app.route("/delete/<int:task_id>")
+@app.route("/delete/<int:task_id>", methods=["POST"])
 @login_required
 def delete(task_id):
     conn = get_db()
@@ -130,7 +134,6 @@ def delete(task_id):
         conn.close()
 
     return redirect(url_for("home"))
-
 
 @app.route("/api/tasks")
 @login_required

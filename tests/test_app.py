@@ -26,11 +26,20 @@ class TaskAppTestCase(unittest.TestCase):
         self.original_get_db = app_module.get_db
         self.original_username = app_module.ADMIN_USERNAME
         self.original_password_hash = app_module.ADMIN_PASSWORD_HASH
+        self.original_testing = app_module.app.config.get("TESTING")
+        self.original_secret_key = app_module.app.config.get("SECRET_KEY")
+        self.original_csrf_enabled = app_module.app.config.get(
+            "WTF_CSRF_ENABLED", True
+        )
 
         app_module.ADMIN_USERNAME = "admin"
         app_module.ADMIN_PASSWORD_HASH = generate_password_hash("testpass123")
+
         app_module.app.config["TESTING"] = True
         app_module.app.config["SECRET_KEY"] = "test-secret-key"
+
+        # Disable CSRF validation only during automated tests.
+        app_module.app.config["WTF_CSRF_ENABLED"] = False
 
         def test_get_db():
             conn = sqlite3.connect(self.db_path)
@@ -49,10 +58,18 @@ class TaskAppTestCase(unittest.TestCase):
         app_module.get_db = self.original_get_db
         app_module.ADMIN_USERNAME = self.original_username
         app_module.ADMIN_PASSWORD_HASH = self.original_password_hash
+
+        app_module.app.config["TESTING"] = self.original_testing
+        app_module.app.config["SECRET_KEY"] = self.original_secret_key
+        app_module.app.config["WTF_CSRF_ENABLED"] = (
+            self.original_csrf_enabled
+        )
+
         self.temp_dir.cleanup()
 
     def test_login(self):
         client = app_module.app.test_client()
+
         response = client.post(
             "/login",
             data={"username": "admin", "password": "testpass123"}
@@ -85,30 +102,46 @@ class TaskAppTestCase(unittest.TestCase):
 
         api_response = self.client.get("/api/tasks")
         self.assertEqual(api_response.status_code, 200)
-        self.assertEqual(api_response.json["tasks"][0]["title"], "Test Task")
+        self.assertEqual(
+            api_response.json["tasks"][0]["title"],
+            "Test Task"
+        )
 
     def test_api_tasks(self):
-        self.client.post("/add", data={"title": "API Test Task"})
+        self.client.post(
+            "/add",
+            data={"title": "API Test Task"}
+        )
+
         response = self.client.get("/api/tasks")
 
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.json["tasks"]), 1)
-        self.assertEqual(response.json["tasks"][0]["title"], "API Test Task")
+        self.assertEqual(
+            response.json["tasks"][0]["title"],
+            "API Test Task"
+        )
 
     def test_delete_task(self):
-        self.client.post("/add", data={"title": "Delete Test Task"})
+        self.client.post(
+            "/add",
+            data={"title": "Delete Test Task"}
+        )
 
         api_response = self.client.get("/api/tasks")
         task_id = api_response.json["tasks"][0]["id"]
 
-        response = self.client.get(f"/delete/{task_id}")
+        response = self.client.post(f"/delete/{task_id}")
         self.assertEqual(response.status_code, 302)
 
         api_response = self.client.get("/api/tasks")
         self.assertEqual(len(api_response.json["tasks"]), 0)
 
     def test_update_task(self):
-        self.client.post("/add", data={"title": "Old Task"})
+        self.client.post(
+            "/add",
+            data={"title": "Old Task"}
+        )
 
         api_response = self.client.get("/api/tasks")
         task_id = api_response.json["tasks"][0]["id"]
@@ -120,6 +153,7 @@ class TaskAppTestCase(unittest.TestCase):
         self.assertEqual(response.status_code, 302)
 
         api_response = self.client.get("/api/tasks")
+
         self.assertEqual(
             api_response.json["tasks"][0]["title"],
             "Updated Task"
@@ -140,7 +174,7 @@ class TaskAppTestCase(unittest.TestCase):
         self.assertEqual(response.status_code, 404)
 
     def test_delete_invalid_task(self):
-        response = self.client.get("/delete/9999")
+        response = self.client.post("/delete/9999")
         self.assertEqual(response.status_code, 404)
 
 

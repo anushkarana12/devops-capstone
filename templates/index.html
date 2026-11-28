@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -72,6 +73,10 @@
             display: inline-block;
         }
 
+        .delete-form {
+            display: inline-block;
+        }
+
         .task {
             display: flex;
             align-items: center;
@@ -80,7 +85,7 @@
             border-bottom: 1px solid #eee;
         }
 
-        .task form {
+        .task form:not(.delete-form) {
             display: flex;
             flex: 1;
             gap: 10px;
@@ -106,7 +111,7 @@
                 flex-wrap: wrap;
             }
 
-            .task form {
+            .task form:not(.delete-form) {
                 flex-basis: 100%;
             }
 
@@ -123,42 +128,81 @@
 
 <body>
     <div class="container">
-        <h1>Task Management System</h1>
-	<form action="{{ url_for('logout') }}" method="POST"
-	      style="text-align: right; margin-bottom: 20px;">
-    		<button type="submit"
-            		style="background: #dc2626; color: white;">
-        	Logout
-    		</button>
-	</form>
 
-        <form action="/add" method="POST" class="add-form">
+        <h1>Task Management System</h1>
+
+        <!-- Logout Form -->
+        <form action="{{ url_for('logout') }}" method="POST"
+              style="text-align: right; margin-bottom: 20px;">
+
+            <input type="hidden" name="csrf_token"
+                   value="{{ csrf_token() }}">
+
+            <button type="submit"
+                    style="background: #dc2626; color: white;">
+                Logout
+            </button>
+        </form>
+
+        <!-- Add Task Form -->
+        <form action="{{ url_for('add') }}" method="POST"
+              class="add-form">
+
+            <input type="hidden" name="csrf_token"
+                   value="{{ csrf_token() }}">
+
             <input type="text" name="title"
                    placeholder="Enter a task" required>
-            <button type="submit" class="add-button">Add Task</button>
+
+            <button type="submit" class="add-button">
+                Add Task
+            </button>
         </form>
 
         <h2>My Tasks</h2>
 
         {% for task in tasks %}
+
             <div class="task">
-                <form action="/update/{{ task.id }}" method="POST">
+
+                <!-- Update Task Form -->
+                <form action="{{ url_for('update', task_id=task.id) }}"
+                      method="POST">
+
+                    <input type="hidden" name="csrf_token"
+                           value="{{ csrf_token() }}">
+
                     <input type="text" name="title"
                            value="{{ task.title }}" required>
+
                     <button type="submit" class="update-button">
                         Update
                     </button>
                 </form>
 
-                <a href="/delete/{{ task.id }}"
-                   class="delete-button"
-                   onclick="return confirm('Delete this task?')">
-                    Delete
-                </a>
+                <!-- Delete Task Form -->
+                <form action="{{ url_for('delete', task_id=task.id) }}"
+                      method="POST" class="delete-form"
+                      onsubmit="return confirm('Delete this task?')">
+
+                    <input type="hidden" name="csrf_token"
+                           value="{{ csrf_token() }}">
+
+                    <button type="submit" class="delete-button">
+                        Delete
+                    </button>
+                </form>
+
             </div>
+
         {% else %}
-            <p class="empty-message">No tasks available. Add your first task!</p>
+
+            <p class="empty-message">
+                No tasks available. Add your first task!
+            </p>
+
         {% endfor %}
+
     </div>
 </body>
 </html>
