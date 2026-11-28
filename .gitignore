@@ -11,3 +11,9 @@ data/
 *.tfstate.*
 crash.log
 crash.*.log
+
+.coverage
+coverage.xml
+*.before-csrf
+*.before-logging
+backup-before-auth/
